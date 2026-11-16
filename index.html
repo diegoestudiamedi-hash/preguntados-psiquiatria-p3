@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PsiquiaTriv - Preguntados Psiquiatría UCM</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 900px;
+      background: var(--card-bg);
+      padding: 16px 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+      margin-bottom: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand h1 {
+      font-size: 1.5rem;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .stat-pill {
+      background: rgba(15, 23, 42, 0.7);
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .score-text {
+      color: var(--warning);
+    }
+
+    .progress-container {
+      width: 100%;
+      background: #0f172a;
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8, #22c55e);
+      transition: width 0.4s ease;
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .wheel-section {
+      background: var(--card-bg);
+      width: 100%;
+      padding: 25px;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+    }
+
+    .wheel-wrapper {
+      position: relative;
+      width: 340px;
+      height: 340px;
+      margin: 15px auto;
+    }
+
+    @media (min-width: 500px) {
+      .wheel-wrapper {
+        width: 400px;
+        height: 400px;
+      }
+    }
+
+    canvas#wheelCanvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      box-shadow: 0 0 25px rgba(0,0,0,0.6);
+      transition: transform 4s cubic-bezier(0.15, 0.85, 0.25, 1);
+    }
+
+    .wheel-pointer {
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 18px solid transparent;
+      border-right: 18px solid transparent;
+      border-top: 34px solid #f8fafc;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+      z-index: 10;
+    }
+
+    .spin-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      background: #0f172a;
+      color: #fff;
+      border: 4px solid #f8fafc;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+      z-index: 10;
+      transition: transform 0.15s ease, background 0.2s;
+    }
+
+    .spin-btn:hover:not(:disabled) {
+      transform: translate(-50%, -50%) scale(1.06);
+      background: #1e293b;
+    }
+
+    .spin-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .category-legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: transform 0.15s, border-color 0.2s;
+    }
+
+    .legend-item:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    /* Modal de Pregunta */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(5px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .question-card {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 680px;
+      border-radius: 20px;
+      padding: 26px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.12);
+      max-height: 92vh;
+      overflow-y: auto;
+      animation: popIn 0.25s ease-out;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .category-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .question-text {
+      font-size: 1.18rem;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option-btn {
+      background: #0f172a;
+      color: var(--text-main);
+      border: 2px solid rgba(255,255,255,0.1);
+      padding: 14px 18px;
+      border-radius: 12px;
+      text-align: left;
+      font-size: 1rem;
+      line-height: 1.4;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .option-btn.correct {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: var(--success);
+      color: #bbf7d0;
+    }
+
+    .option-btn.wrong {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--danger);
+      color: #fecaca;
+    }
+
+    .option-letter {
+      font-weight: 800;
+      color: var(--accent);
+      min-width: 22px;
+    }
+
+    .feedback-box {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      border-left: 5px solid var(--accent);
+      display: none;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .feedback-box.active {
+      display: block;
+    }
+
+    .feedback-title {
+      font-weight: 800;
+      margin-bottom: 6px;
+      font-size: 1.05rem;
+    }
+
+    .next-btn, .restart-btn {
+      margin-top: 18px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #38bdf8, #6366f1);
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .next-btn:hover, .restart-btn:hover {
+      opacity: 0.92;
+    }
+
+    .helper-text {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-top">
+      <div class="brand">
+        <span style="font-size: 1.8rem;">🧠</span>
+        <div>
+          <h1>PsiquiaTriv UCM</h1>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Meta: 5000 pts (+100 pts por acierto)</div>
+        </div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat-pill" id="livesDisplay" title="Vidas restantes">❤️❤️❤️</div>
+        <div class="stat-pill score-text">⭐ <span id="scoreValue">0</span> / 5000</div>
+        <button onclick="resetGame()" style="background:transparent; border:1px solid #475569; color:#cbd5e1; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.85rem;">Reiniciar</button>
+      </div>
+    </div>
+    <div class="progress-container">
+      <div class="progress-fill" id="progressBar"></div>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <section class="wheel-section">
+      <div class="wheel-wrapper">
+        <div class="wheel-pointer"></div>
+        <canvas id="wheelCanvas" width="500" height="500"></canvas>
+        <button class="spin-btn" id="spinBtn" onclick="spinWheel()">GIRAR</button>
+      </div>
+      <p class="helper-text">Gira la ruleta para obtener una pregunta aleatoria o haz clic directamente en una categoría debajo para practicarla.</p>
+      <div class="category-legend" id="categoryLegend"></div>
+    </section>
+  </main>
+
+  <!-- Modal de Pregunta -->
+  <div class="modal-overlay" id="questionModal">
+    <div class="question-card">
+      <span class="category-badge" id="modalCategoryBadge">Categoría</span>
+      <div class="question-text" id="modalQuestionText">¿Pregunta?</div>
+      <div class="options-list" id="modalOptionsList"></div>
+      <div class="feedback-box" id="modalFeedbackBox">
+        <div class="feedback-title" id="modalFeedbackTitle"></div>
+        <div id="modalFeedbackText"></div>
+      </div>
+      <button class="next-btn" id="modalNextBtn" style="display:none;" onclick="closeQuestionModal()">Continuar</button>
+    </div>
+  </div>
+
+  <!-- Modal de Fin de Juego / Victoria -->
+  <div class="modal-overlay" id="endModal">
+    <div class="question-card" style="text-align: center;">
+      <div id="endEmoji" style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
+      <h2 id="endTitle" style="font-size: 1.8rem; margin-bottom: 10px;">¡Felicidades!</h2>
+      <p id="endMessage" style="color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;"></p>
+      <button class="restart-btn" onclick="resetGame()">Jugar una nueva partida</button>
+    </div>
+  </div>
+
+  <script>
+    const categories = [
+      { id: 0, name: "Control de Impulsos", short: "Impulsos", color: "#ef4444" },
+      { id: 1, name: "T. de Personalidad", short: "Personalidad", color: "#8b5cf6" },
+      { id: 2, name: "Uso de Sustancias", short: "Sustancias", color: "#f59e0b" },
+      { id: 3, name: "Conducta Alimentaria", short: "TCA", color: "#10b981" },
+      { id: 4, name: "Psicogeriatría", short: "Psicogeriatría", color: "#3b82f6" },
+      { id: 5, name: "Urgencias Psiquiátricas", short: "Urgencias", color: "#ec4899" },
+      { id: 6, name: "Síntomas Somáticos", short: "Somáticos", color: "#14b8a6" },
+      { id: 7, name: "Red de Salud", short: "Red de Salud", color: "#6366f1" }
+    ];
+
+    const questionBank = {
+      0: [ // Trastorno de Control de Impulsos (Clase 18)
+        {
+          q: "Respecto a las bases neurobiológicas y hormonales implicadas en la génesis de los impulsos (Clase 18), ¿qué perfil se asocia directamente con una mayor impulsividad?",
+          options: [
+            "Aumento de serotonina (5-HT) central y disminución de dopamina",
+            "Disminución de serotonina (<5-HT), aumento de noradrenalina (NA) y dopamina (DA) centrales, e influencia de testosterona",
+            "Hipoactividad dopaminérgica en el núcleo accumbens e hiperactividad gabaérgica",
+            "Aumento exclusivo de acetilcolina y disminución de testosterona plasmática"
+          ],
+          correct: 1,
+          feedback: "En el modelo multifactorial de los impulsos, los factores neurobiológicos incluyen baja serotonina (<5-HT), aumento de noradrenalina (>NA) y dopamina (DA) centrales, además de factores hormonales como la testosterona."
+        },
+        {
+          q: "Al describir la personalidad en relación con el control de impulsos, ¿cuál es la diferencia entre temperamento y carácter?",
+          options: [
+            "El temperamento se adquiere por la crianza y el carácter es 100% genético",
+            "El temperamento está ligado a lo biológico/hereditario, mientras que el carácter se relaciona con las defensas psicológicas, la crianza y cómo se lidia con las normas",
+            "Ambos conceptos son sinónimos y dependen exclusivamente del entorno escolar",
+            "El carácter aparece en la infancia temprana y el temperamento recién en la adultez"
+          ],
+          correct: 1,
+          feedback: "El temperamento corresponde al sustrato biológico y hereditario, mientras que el carácter se moldea con la crianza, las defensas psicológicas adquiridas y el aprendizaje para manejar los propios impulsos frente a las normas sociales."
+        },
+        {
+          q: "¿Cuál es la dinámica central del ciclo de la conducta impulsiva (como en la cleptomanía o la piromanía) respecto al estado afectivo del sujeto?",
+          options: [
+            "Ausencia de tensión previa seguida de una planificación fría para obtener lucro económico",
+            "Tensión interna creciente previa al acto (similar al craving), seguida de una sensación temporal de alivio o liberación de tensión al ejecutar la conducta",
+            "Bienestar continuo antes, durante y meses después de realizar la acción sin consecuencias negativas",
+            "Presencia de alucinaciones auditivas que ordenan realizar el robo o incendio"
+          ],
+          correct: 1,
+          feedback: "En los trastornos del control de impulsos existe una tensión creciente previa a la conducta y, al ejecutarla, lo que se experimenta es principalmente un alivio temporal de esa tensión interna acumulada."
+        },
+        {
+          q: "Según los criterios DSM-5 revisados en clases para el Trastorno Oposicionista Desafiante (TOD), ¿cuántos síntomas y por cuánto tiempo mínimo deben presentarse?",
+          options: [
+            "Al menos 2 de 5 síntomas durante 1 mes",
+            "Al menos 4 de los 8 síntomas (enfado/irritabilidad, actitud desafiante, vengativo) durante al menos 6 meses",
+            "Al menos 6 síntomas de agresión física severa a animales durante 12 meses",
+            "1 síntoma aislado de discusión con adultos en las últimas 2 semanas"
+          ],
+          correct: 1,
+          feedback: "El TOD requiere un patrón persistente de al menos 4 de los 8 síntomas divididos en enfado/irritabilidad, discusiones/actitud desafiante y ser vengativo, con una duración mínima de 6 meses."
+        },
+        {
+          q: "En el Trastorno Oposicionista Desafiante y en el Trastorno de Conducta, ¿qué hallazgos fisiológicos se asocian a un peor pronóstico?",
+          options: [
+            "Taquicardia sinusal permanente e hipercortisolismo reactivo extremo",
+            "Frecuencia cardíaca basal baja en reposo y menor reactividad fisiológica/del cortisol frente al estrés",
+            "Aumento marcado de la presión arterial diastólica ante estímulos neutros",
+            "Hiperreactividad autonómica con sudoración profusa ante cualquier norma"
+          ],
+          correct: 1,
+          feedback: "Una frecuencia cardíaca basal baja y una reactividad reducida del cortisol basal sugieren una menor respuesta fisiológica de estrés ante estímulos que normalmente alertarían o frenarían a otras personas."
+        },
+        {
+          q: "Un paciente presenta episodios abruptos y desproporcionados de agresión (ej. golpear a un mecánico porque estima que su auto quedó mal arreglado), comportándose de forma aceptable el resto del tiempo. ¿Qué fármacos se mencionan con utilidad para contener esta descarga?",
+          options: [
+            "Solo metilfenidato en dosis altas",
+            "Estabilizadores del ánimo, ISRS y betabloqueadores como propranolol (además de psicoterapia)",
+            "Antidepresivos tricíclicos y levodopa",
+            "Disulfiram y donepezilo"
+          ],
+          correct: 1,
+          feedback: "En el Trastorno Explosivo Intermitente, además de psicoterapia para reconocer gatillantes y rabia, los estabilizadores del ánimo, ISRS y el propranolol han mostrado utilidad para contener la descarga adrenérgica."
+        },
+        {
+          q: "Respecto a la Cleptomanía, ¿cuál de las siguientes afirmaciones sobre su clínica, epidemiología y manejo es correcta?",
+          options: [
+            "Se roban objetos de alto valor económico para venderlos; es 90% más frecuente en hombres",
+            "Casi 2/3 son mujeres, se roban objetos que no se necesitan o de poco valor económico por dificultad para resistir el impulso, y en su manejo se usan ISRS, naltrexona y terapia conductual",
+            "Es una conducta completamente consciente motivada por venganza hacia el dueño de la tienda",
+            "Su prevalencia es del 25% de la población general y se resuelve espontáneamente en 1 semana"
+          ],
+          correct: 1,
+          feedback: "En la cleptomanía casi dos tercios son mujeres, no hay motivación económica ni de venganza, y farmacológicamente se utilizan ISRS y naltrexona (antagonista opioide que bloquea el refuerzo positivo)."
+        },
+        {
+          q: "¿Qué cambio clasificatorio ocurrió con la Tricotilomanía en el DSM-5 y qué tratamiento local se ha utilizado cuando el paciente refiere una sensación de 'comezón' previa a arrancarse el cabello?",
+          options: [
+            "Pasó al grupo de trastornos psicóticos y se trata con haloperidol tópico",
+            "Se incluyó dentro de los trastornos obsesivo-compulsivos y relacionados; cuando hay prurito/comezón previa se han utilizado corticoides locales además de TCC e ISRS",
+            "Pasó a trastornos neurocognitivos y se maneja con memantina",
+            "Se eliminó del DSM-5 por considerarse una variante normal sin tratamiento"
+          ],
+          correct: 1,
+          feedback: "En el DSM-5 la tricotilomanía pasó al espectro obsesivo-compulsivo (junto al trastorno de excoriación/skin picking). El pilar es la TCC, uso de ISRS y, si hay sensación de comezón previa, corticoides tópicos."
+        }
+      ],
+      1: [ // Trastorno de Personalidad (Clase 23)
+        {
+          q: "Un estudiante piensa que cuando el profesor elige a otro compañero para una actividad es 'porque le tiene mala', y si sus amigos se reúnen sin él cree que 'quieren perjudicarlo para que le vaya mal'. ¿A qué trastorno y Cluster corresponde?",
+          options: [
+            "Trastorno Esquizoide - Cluster A",
+            "Trastorno Paranoide de la Personalidad - Cluster A",
+            "Trastorno Evitativo - Cluster C",
+            "Trastorno Límite - Cluster B"
+          ],
+          correct: 1,
+          feedback: "El Trastorno Paranoide (Cluster A, 'extraños') se caracteriza por una desconfianza y suspicacia sostenida hacia los demás, interpretando sus intenciones como malévolas o con motivos ocultos."
+        },
+        {
+          q: "¿Cómo se diferencia clínicamente el Trastorno Límite de la Personalidad (TLP) del Trastorno Bipolar en relación con los cambios anímicos?",
+          options: [
+            "En el TLP los episodios duran mínimo 6 meses y en el trastorno bipolar duran minutos",
+            "En el TLP los cambios son emocionales, puntiformes y ocurren de un momento a otro en el mismo día (reactivos), mientras que en el trastorno bipolar son episodios del humor estables que duran semanas o meses",
+            "No existe diferencia clínica; ambos son el mismo diagnóstico en el DSM-5",
+            "El TLP siempre cursa con alucinaciones visuales crónicas y el bipolar no"
+          ],
+          correct: 1,
+          feedback: "El humor es estable (los episodios afectivos bipolares duran semanas o meses con periodos de eutimia), mientras que en el TLP predomina la inestabilidad afectiva con cambios emocionales rápidos en horas o de un día para otro."
+        },
+        {
+          q: "Según el diagnóstico estructural de Otto Kernberg, ¿cuáles son los 3 criterios principales para clasificar la organización de personalidad en Neurótica, Limítrofe o Psicótica?",
+          options: [
+            "Coeficiente intelectual, memoria de trabajo y atención dividida",
+            "Prueba de realidad, Mecanismos de defensa e Integración de la identidad",
+            "Nivel socioeconómico, antecedentes familiares y respuesta a ISRS",
+            "Extroversión, amabilidad y apertura a la experiencia"
+          ],
+          correct: 1,
+          feedback: "Kernberg evalúa tres pilares: Prueba de realidad (conservada en OP neurótica y limítrofe, alterada en psicótica), Mecanismos de defensa (represión en neurótica vs. escisión en limítrofe/psicótica) e Identidad (integrada en neurótica vs. difusión de identidad en limítrofe/psicótica)."
+        },
+        {
+          q: "Dentro del acrónimo RADIOS utilizado para la evaluación estructural de la personalidad, ¿qué significan sus siglas?",
+          options: [
+            "Rapidez, Atención, Delirio, Inteligencia, Orientación y Sueño",
+            "Realidad (prueba de realidad), Agresividad, Defensas, Identidad, Relaciones Objetales y Superyó",
+            "Riesgo, Ansiedad, Depresión, Impulsividad, Obsesión y Somatización",
+            "Reactividad, Afecto, Discurso, Insight, Obediencia y Sociabilidad"
+          ],
+          correct: 1,
+          feedback: "RADIOS evalúa: Realidad, Agresividad (incluyendo heteroagresividad o parasitismo), Defensas (altas vs bajas/escisión), Identidad, Relaciones Objetales y Superyó."
+        },
+        {
+          q: "Un paciente de 38 años lleva 4 años con licencia médica sin patología orgánica actual, vive gratis en casa de su exsuegra, no trabaja ni ayuda en el hogar y amenaza implícitamente con suicidarse si dejan de mantenerlo. Según el modelo estructural, esto ejemplifica:",
+          options: [
+            "Mecanismo de defensa de sublimación y altruismo con organización neurótica",
+            "Conducta pasivo-parasitaria (alta agresividad) y relaciones objetales explotadoras en una organización limítrofe de bajo nivel",
+            "Superyó excesivamente rígido propio de un trastorno obsesivo-compulsivo",
+            "Personalidad normal con adaptación flexible al estrés"
+          ],
+          correct: 1,
+          feedback: "Vivir a costa de los demás sin contribuir pudiendo hacerlo constituye una conducta pasivo-parasitaria (manifestación de agresividad alta) con vínculos explotadores y manipuladores, propio de una OLP de bajo nivel."
+        },
+        {
+          q: "Un médico urgenciólogo tiene prueba de realidad conservada, identidad integrada, usa la represión como defensa y posee un Superyó extremadamente rígido y autoexigente (llega 2 horas antes, se queda hasta tarde revisando todo y se castiga si algo sale mal). ¿Qué organización de personalidad presenta según Kernberg?",
+          options: [
+            "Organización Psicótica de la personalidad",
+            "Organización Neurótica de la personalidad (Trastorno de personalidad obsesivo-compulsivo en lo categorial)",
+            "Organización Limítrofe de nivel inferior",
+            "Síndrome de difusión de identidad severo"
+          ],
+          correct: 1,
+          feedback: "Todos los trastornos de personalidad del DSM corresponden a organizaciones limítrofes de personalidad, EXCEPTO el trastorno de personalidad obsesivo-compulsivo ( y rasgos afines de alto nivel), que presenta una Organización Neurótica (identidad integrada, defensas basadas en represión y prueba de realidad conservada)."
+        },
+        {
+          q: "Cuando un interno de 7° año reprueba un ensayo del EUNACOM y dice: 'No sirvo para nada, voy a abandonar la carrera hoy mismo, además los profesores me tienen mala y hicieron la prueba para perjudicarme', ¿qué mecanismos de defensa primitivos predominan?",
+          options: [
+            "Anticipación, humor y sublimación",
+            "Escisión (todo blanco o negro) y heteroculpabilización",
+            "Altruismo y represión neurótica",
+            "Supresión consciente adaptativa"
+          ],
+          correct: 1,
+          feedback: "Evaluar la realidad de forma extrema ('todo bueno o todo malo', sin matices) corresponde a la escisión, y atribuir toda la culpa afuera sin integrar la propia responsabilidad corresponde a heteroculpabilización."
+        },
+        {
+          q: "En el análisis estructural visto en clases sobre el personaje Walter White (quien presenta grandiosidad, uso instrumental de las personas, falta de empatía, delitos y homicidios), ¿a qué diagnóstico estructural corresponde?",
+          options: [
+            "Organización neurótica con rasgos evitativos",
+            "Organización límite de la personalidad de nivel inferior (perfil de narcisismo maligno)",
+            "Organización psicótica por esquizofrenia hebefrénica",
+            "Trastorno de personalidad dependiente de nivel superior"
+          ],
+          correct: 1,
+          feedback: "La combinación de narcisismo grandioso, conducta antisocial, heteroagresividad grave, falta de empatía y deterioro moral corresponde al narcisismo maligno, ubicado en la Organización Límite de la Personalidad (OLP) de nivel inferior."
+        }
+      ],
+      2: [ // Trastorno por uso de sustancias (Clase 22)
+        {
+          q: "En las bases neurobiológicas de las adicciones (Clase 22), ¿cuál es la principal vía dopaminérgica del sistema de recompensa y qué ocurre en la etapa 2 ('Abstinencia y afecto negativo')?",
+          options: [
+            "Vía tuberoinfundibular; aumenta la dopamina al doble de lo normal",
+            "Vía mesolímbica (con el núcleo accumbens); en la etapa 2 se activa la amígdala, cae la dopamina bajo lo normal y se libera CRF (estrés), consumiendo para aliviar el malestar",
+            "Vía nigroestriada; el consumo en la etapa 2 busca exclusivamente euforia recreativa",
+            "Vía piramidal; se inhibe por completo la amígdala y el hipocampo"
+          ],
+          correct: 1,
+          feedback: "La vía mesolímbica (área tegmental ventral hacia núcleo accumbens) es el eje de la recompensa. En la 2ª etapa (abstinencia/afecto negativo) se activa la amígdala y sistemas de estrés (CRF), por lo que la persona consume para dejar de sentirse mal (refuerzo negativo)."
+        },
+        {
+          q: "¿Qué postula el Triángulo de Zinberg (1984) respecto a la experiencia en el uso de drogas?",
+          options: [
+            "Que el potencial adictivo depende en un 100% de la estructura química de la droga",
+            "Que la experiencia depende de la interacción entre 3 factores: la Droga (tipo, dosis, vía), el Individuo (estado mental, genética, personalidad) y el Ambiente (seguro vs caótico, compañía)",
+            "Que existen solo tres drogas adictivas: alcohol, tabaco y opio",
+            "Que el tratamiento debe basarse en aislamiento hospitalario por 3 años"
+          ],
+          correct: 1,
+          feedback: "Zinberg plantea que la droga por sí sola no explica toda la adicción, sino la interacción dinámica entre Droga, Individuo y Ambiente."
+        },
+        {
+          q: "Al aplicar el cuestionario AUDIT en Atención Primaria para tamizaje de consumo de alcohol, ¿qué conducta corresponde si un paciente obtiene 18 puntos?",
+          options: [
+            "Felicitarlo y dar intervención mínima por consumo de bajo riesgo",
+            "Realizar derivación asistida para evaluación integral por probable consumo perjudicial o dependencia (puntaje ≥ 16)",
+            "Repetir el test en 5 años sin indicar medidas",
+            "Aplicar inmediatamente el test CRAFFT aunque tenga 55 años"
+          ],
+          correct: 1,
+          feedback: "En el AUDIT: 0-7 puntos es bajo riesgo (intervención mínima), 8-15 puntos es consumo de riesgo (intervención breve) y 16 o más puntos indica probable consumo perjudicial o dependencia (derivación asistida)."
+        },
+        {
+          q: "Respecto a los fármacos utilizados en el tratamiento del trastorno por consumo de alcohol, ¿cuál es el mecanismo de acción del Disulfiram y de la Naltrexona?",
+          options: [
+            "El disulfiram es un agonista GABA y la naltrexona inhibe la colinesterasa",
+            "El disulfiram inhibe irreversiblemente la enzima ALDH acumulando acetaldehído (reacción aversiva), y la naltrexona es un antagonista opioide (mu) que reduce el placer y el craving",
+            "Ambos son benzodiacepinas de vida media larga para el delirium tremens",
+            "El disulfiram bloquea receptores D2 y la naltrexona estimula receptores nicotínicos"
+          ],
+          correct: 1,
+          feedback: "El disulfiram (250-500 mg/día) inhibe la aldehído deshidrogenasa (ALDH) acumulando acetaldehído al beber (rubor, náuseas, taquicardia, hipotensión). La naltrexona (50 mg/día) bloquea receptores opioides mu disminuyendo la recompensa y el craving."
+        },
+        {
+          q: "Un paciente alcohólico crónico suspende bruscamente la ingesta hace 72 horas y evoluciona con confusión marcada, agitación, fiebre, taquicardia, hipertensión y alucinaciones visuales de insectos ('zoopsias'). ¿Cuál es el diagnóstico y manejo inicial?",
+          options: [
+            "Intoxicación aguda por alcohol; dar flumazenil endovenoso",
+            "Delirium Tremens (fase tardía de abstinencia); requiere manejo intensivo, monitorización, hidratación, benzodiacepinas (según CIWA-Ar) y tiamina",
+            "Síndrome de Korsakoff puro; dar glucosa hipertónica al 30% sin vitaminas",
+            "Acatisia por neurolépticos; indicar biperideno"
+          ],
+          correct: 1,
+          feedback: "El Delirium Tremens aparece entre las 48-72 hrs (hasta 1 semana) tras el cese de OH, con confusión, hiperactividad autonómica y zoopsias. Se evalúa con escala CIWA-Ar y requiere BZD, hidratación y tiamina."
+        },
+        {
+          q: "En el manejo de urgencia de la Encefalopatía de Wernicke en un paciente con consumo problemático de alcohol, ¿qué precaución terapéutica es crítica?",
+          options: [
+            "Administrar suero glucosado antes que cualquier vitamina para nutrir el cerebro",
+            "Administrar tiamina (500 mg EV c/8h por 3 días) SIEMPRE antes de aportar glucosa, y corregir paralelamente la hipomagnesemia",
+            "Restringir el aporte de magnesio porque inactiva la tiamina",
+            "Usar exclusivamente tiamina oral en dosis de 5 mg al día"
+          ],
+          correct: 1,
+          feedback: "La tiamina EV debe administrarse antes de cualquier carga de glucosa (ya que los carbohidratos consumen las reservas de B1 precipitando o agravando la encefalopatía de Wernicke) y debe corregirse el déficit de magnesio (cofactor necesario)."
+        },
+        {
+          q: "Sobre el tratamiento farmacológico del tabaquismo en Chile (incluyendo la canasta GES en APS) revisado en la Clase 22, ¿cuál afirmación es correcta?",
+          options: [
+            "La vareniclina (Champix) es el fármaco de primera línea actual en todos los CESFAM",
+            "Se utiliza Bupropión (150-300 mg/día, iniciando 1-2 semanas antes de dejar de fumar por 8-12 semanas) y terapia de reemplazo de nicotina; la vareniclina fue retirada en 2021 por detección de nitrosaminas",
+            "Los chicles de nicotina están contraindicados si el paciente fuma más de 10 cigarros",
+            "El síndrome de abstinencia a nicotina tiene alta letalidad por infarto directo"
+          ],
+          correct: 1,
+          feedback: "El Bupropión disminuye el craving, los síntomas de abstinencia y atenúa la ganancia de peso (incluido en GES junto a apoyo psicológico). La vareniclina se retiró globalmente desde 2021 por presencia de nitrosaminas."
+        },
+        {
+          q: "¿Qué porcentaje de los pacientes que presentan un episodio psicótico inducido por cannabis (THC) tiene riesgo de evolucionar hacia una esquizofrenia en el futuro, según la evidencia presentada en clases?",
+          options: [
+            "Menos del 1%",
+            "Entre un 41% y un 47%",
+            "Exactamente el 100% en todos los casos a las 24 horas",
+            "Un 5%, igual que el tabaco"
+          ],
+          correct: 1,
+          feedback: "Quienes experimentan una psicosis inducida por cannabis (donde se pierde el juicio de realidad por días a semanas) presentan entre un 41% y un 47% de riesgo de evolucionar a esquizofrenia a largo plazo."
+        }
+      ],
+      3: [ // Trastorno de la Conducta Alimentaria (Clase 19)
+        {
+          q: "En relación con la vivencia de los síntomas en la Anorexia Nerviosa (Clase 19), ¿cómo se manifiestan los conceptos de egosintonía y egodistonía?",
+          options: [
+            "El deseo de bajar de peso es completamente egodistónico desde el primer día",
+            "Es egosintónico respecto a la idea de sentir que debe estar más delgada, pero egodistónico respecto a las consecuencias negativas que comienza a sufrir en su vida cotidiana",
+            "Tanto la restricción alimentaria como las hospitalizaciones son 100% egosintónicas",
+            "No existe distorsión de la imagen corporal en la anorexia nerviosa"
+          ],
+          correct: 1,
+          feedback: "En la anorexia nerviosa, el pensamiento de querer estar más flaco está en armonía con su identidad actual (egosintónico), pero el sufrimiento y las consecuencias físicas/sociales le resultan molestas (egodistónicas)."
+        },
+        {
+          q: "Un paciente consulta angustiado diciendo que 'tuvo un tremendo atracón y perdió el control', pero al preguntarle qué comió responde: 'me comí 3 galletas'. ¿Qué principio clínico destaca el docente sobre este caso?",
+          options: [
+            "Descartar de inmediato un TCA porque 3 galletas no superan las 2000 kcal",
+            "Considerar la subjetividad del atracón: lo central para el paciente es el sentimiento de pérdida de control sobre lo ingerido más que solo la cantidad objetiva",
+            "Diagnosticar síndrome de rumiación",
+            "Indicar hospitalización involuntaria inmediata en UHCIP"
+          ],
+          correct: 1,
+          feedback: "En la práctica clínica el concepto de atracón tiene un fuerte componente subjetivo centrado en la sensación de 'pérdida de control' y culpa intensa al romper su regla restrictiva."
+        },
+        {
+          q: "¿Cuál es la principal diferencia antropométrica entre la Bulimia Nerviosa estándar y la Anorexia Nerviosa con conductas purgativas, y qué es el Trastorno por Atracones?",
+          options: [
+            "En la bulimia el IMC siempre es menor a 14 y en la anorexia es mayor a 30",
+            "En la bulimia el IMC suele mantenerse en rangos normales (o sobrepeso), mientras que en la anorexia es bajo (<18); en el trastorno por atracones hay ingesta compulsiva sin conductas compensatorias/purga",
+            "El trastorno por atracones exige vómitos autoinducidos diarios",
+            "La anorexia nerviosa nunca presenta conductas purgativas"
+          ],
+          correct: 1,
+          feedback: "El IMC permite diferenciar la bulimia nerviosa (IMC normal) de la anorexia nerviosa (bajo peso). El trastorno por atracones cursa con episodios de ingesta compulsiva con malestar emocional, pero sin purgas posteriores."
+        },
+        {
+          q: "Una paciente presenta vómitos autoinducidos recurrentes. ¿Qué alteraciones electrolíticas, ácido-base y signos físicos son característicos de buscar en la evaluación?",
+          options: [
+            "Acidosis metabólica hiperkalémica, atrofia parotídea y bradicardia extrema",
+            "Alcalosis metabólica, hipokalemia (con riesgo de paro cardíaco/arritmias), desgaste del esmalte dental, esofagitis, hipertrofia parotídea y callosidades en el dorso de los dedos",
+            "Hipernatremia severa con úlceras plantares",
+            "Hipocalcemia aislada sin compromiso digestivo ni dental"
+          ],
+          correct: 1,
+          feedback: "Los vómitos recurrentes producen alcalosis metabólica e hipokalemia peligrosa (requiere ECG y electrolitos), además de erosión dental, esofagitis/Mallory-Weiss, hipertrofia parotídea y lesiones en los dedos por el ácido gástrico."
+        },
+        {
+          q: "¿Cuáles son las tres principales causas de muerte en pacientes con trastornos de la conducta alimentaria (siendo la anorexia el cuadro de mayor letalidad en psiquiatría)?",
+          options: [
+            "Accidente cerebrovascular, cirrosis hepática y tromboembolismo pulmonar",
+            "Paro cardiorrespiratorio, infecciones concomitantes (por malnutrición) y suicidio",
+            "Insuficiencia renal aguda obstructiva, pancreatitis y estatus epiléptico",
+            "Hemorragia subaracnoidea, infarto mesentérico y shock anafiláctico"
+          ],
+          correct: 1,
+          feedback: "La anorexia es el trastorno con mayor letalidad psiquiátrica; las 3 principales causas de muerte son el paro cardiorrespiratorio (por sarcopenia cardíaca/arritmias por hipokalemia), infecciones asociadas a desnutrición y el suicidio."
+        },
+        {
+          q: "¿Cuáles de los siguientes criterios constituyen indicaciones de hospitalización en un paciente con Trastorno de la Conducta Alimentaria?",
+          options: [
+            "IMC de 21, ansiedad leve y consumo de dieta vegana por motivos éticos",
+            "IMC < 15, bradicardia, ayuno prolongado / deshidratación, riesgo suicida o falta de soporte social para el tratamiento",
+            "Presencia de selectividad alimentaria por texturas en un niño con TEA",
+            "Cualquier paciente que solicite tratamiento con fluoxetina"
+          ],
+          correct: 1,
+          feedback: "Se debe hospitalizar ante alto riesgo vital o médico: IMC < 15, bradicardia, nula ingesta prolongada, deshidratación, alto riesgo suicida o ausencia de red de apoyo familiar."
+        },
+        {
+          q: "Respecto a la psicoterapia y farmacoterapia con mayor evidencia en los TCA según la Clase 19, ¿cuál asociación es correcta?",
+          options: [
+            "En anorexia el fármaco curativo de primera línea es el haloperidol en altas dosis",
+            "En anorexia destaca la terapia familiar (Modelo Maudsley); en bulimia/atracones destaca la TCC específica y el uso de ISRS en dosis altas como Fluoxetina (60-80 mg) o Sertralina (50-200 mg), o lisdexanfetamina en atracones",
+            "Los antidepresivos están prohibidos en todos los pacientes con bulimia",
+            "La terapia electroconvulsiva es la primera línea ambulatoria en bulimia leve"
+          ],
+          correct: 1,
+          feedback: "En la anorexia nerviosa la intervención familiar basada en el modelo Maudsley tiene la mayor validación; en bulimia nerviosa se usa TCC focalizada e ISRS en dosis altas (fluoxetina 60-80 mg/día) para reducir atracones y purgas."
+        },
+        {
+          q: "¿Qué cambio importante introdujo el DSM-5 en los criterios diagnósticos de Anorexia Nerviosa y qué complicación grave ocurre si se realimenta de forma abrupta a un paciente severamente desnutrido?",
+          options: [
+            "Agregó la amenorrea obligatoria de 6 meses; la complicación es la hipernatremia",
+            "Eliminó la amenorrea como criterio excluyente (permitiendo diagnosticar mejor a hombres y mujeres que aún menstrúan); la complicación por realimentación brusca es el Síndrome de Realimentación",
+            "Eliminó el criterio de bajo peso corporal; la complicación es el síndrome serotoninérgico",
+            "Exige realizar una biopsia gástrica; la complicación es la alcalosis respiratoria"
+          ],
+          correct: 1,
+          feedback: "El DSM-5 eliminó la amenorrea como requisito diagnóstico. Además, realimentar de manera agresiva a un paciente con desnutrición severa puede desencadenar un Síndrome de Realimentación potencialmente letal."
+        }
+      ],
+      4: [ // Psicogeriatría (Clase 24)
+        {
+          q: "Según el DSM-5 (Clase 24), ¿cuál es el criterio clínico fundamental que diferencia un Trastorno Neurocognitivo (TNC) Menor (leve) de un TNC Mayor (demencia)?",
+          options: [
+            "La edad del paciente: menor de 65 años es TNC menor y mayor de 65 es TNC mayor",
+            "La conservación de la independencia en las actividades cotidianas (funcionalidad): en el TNC leve los déficits no interfieren con la autonomía diaria (aunque requiera mayor esfuerzo o estrategias compensatorias), mientras que en el TNC mayor sí disminuyen la funcionalidad",
+            "La presencia de fiebre e infección urinaria aguda",
+            "En el TNC menor no existe queja subjetiva ni evidencia en test neuropsicológicos"
+          ],
+          correct: 1,
+          feedback: "La diferencia clave radica en la funcionalidad e independencia en las actividades de la vida diaria (conservada en el TNC menor/leve y comprometida en el TNC mayor)."
+        },
+        {
+          q: "¿Cómo se diferencia clínicamente la Demencia por Cuerpos de Lewy de la Demencia por Enfermedad de Parkinson, y qué caracteriza a la Demencia Frontotemporal?",
+          options: [
+            "En Cuerpos de Lewy no hay alucinaciones ni parkinsonismo nunca",
+            "En Cuerpos de Lewy el deterioro cognitivo aparece primero y luego (≈1 año) el parkinsonismo con alucinaciones; en Parkinson los síntomas motores preceden al deterioro cognitivo; en la Frontotemporal predominan la desinhibición conductual, cambios de personalidad y disfunción ejecutiva (más frecuente en <65 años)",
+            "La demencia vascular es de inicio insidioso sin relación con ACV y representa el 90% de los casos",
+            "La enfermedad de Alzheimer representa solo el 5% de las demencias en Chile"
+          ],
+          correct: 1,
+          feedback: "El Alzheimer es la causa más frecuente (60-80%), seguida de la vascular (20-30%), Cuerpos de Lewy (~5%, inicia con cognición y luego parkinsonismo) y Frontotemporal (destaca por desinhibición prefrontal y cambios de personalidad)."
+        },
+        {
+          q: "Durante la evaluación neurológica de un paciente con demencia, usted observa que no puede ejecutar movimientos aprendidos como usar un tenedor o peinarse, pese a tener la función motora conservada. Además, no tiene conciencia de su propia enfermedad. ¿Cómo se denominan estos dos signos?",
+          options: [
+            "Disartria y negligencia hemisférica",
+            "Apraxia y Anosognosia",
+            "Afasia y perseveración",
+            "Agnosia visual y reflejo de succión"
+          ],
+          correct: 1,
+          feedback: "La apraxia es la incapacidad para ejecutar movimientos aprendidos (ej. usar cubiertos o vestirse), mientras que la anosognosia es la falta de conciencia o reconocimiento de los propios déficits o enfermedad."
+        },
+        {
+          q: "En el estudio de un adulto mayor con deterioro cognitivo, ¿qué causas reversibles e iatrogénicas (fármacos) se deben buscar y descartar activamente?",
+          options: [
+            "Solo solicitar radiografía de tórax; ningún fármaco afecta la memoria",
+            "Descartar depresión, déficit de vitamina B12, hipotiroidismo, hidrocefalia normotensiva, infecciones (VIH/sífilis) y revisar fármacos como benzodiacepinas, antidepresivos tricíclicos y anticonvulsivantes",
+            "Iniciar benzodiacepinas de vida media larga a todo adulto mayor como neuroprotector",
+            "Suspender los medicamentos antihipertensivos en pacientes con demencia vascular"
+          ],
+          correct: 1,
+          feedback: "Siempre deben descartarse causas reversibles (depresión, hipotiroidismo, déficit de B12, hidrocefalia normotensiva, infecciones) y retirar gradualmente fármacos deletéreos para la cognición como las benzodiacepinas y tricíclicos."
+        },
+        {
+          q: "Respecto a los instrumentos de tamizaje cognitivo utilizados en Chile (MMSE, Mini-Cog, MoCA y MIS), ¿cuál de las siguientes afirmaciones es correcta?",
+          options: [
+            "El MMSE no tiene ningún sesgo por nivel educacional",
+            "El Mini-Cog fue aprobado para APS y consiste en repetir 3 palabras, dibujar un reloj y recordar las 3 palabras (0-2 puntos sugiere mayor estudio); en el MoCA se suma 1 punto si tiene ≤12 años de escolaridad",
+            "El test MIS dura 90 minutos y exige cálculo diferencial",
+            "Los test de screening sirven para curar definitivamente la enfermedad de Alzheimer"
+          ],
+          correct: 1,
+          feedback: "El Mini-Cog evalúa memoria de 3 palabras (hasta 3 pts) y dibujo del reloj (2 pts), siendo <3 puntos sugerente de deterioro. El MoCA evalúa múltiples dominios (normal ≥26) y ajusta +1 punto si la escolaridad es ≤12 años."
+        },
+        {
+          q: "¿Qué evalúan respectivamente la Escala de Lawton y Brody y el Índice de Barthel, y qué sesgo importante se menciona para Lawton y Brody?",
+          options: [
+            "Lawton y Brody evalúa continencia de esfínteres; Barthel evalúa uso de cajero automático",
+            "Lawton y Brody evalúa 8 Actividades Instrumentales de la Vida Diaria (AIVD: cocinar, manejar dinero, medicación, etc.) y tiene sesgo de género/cultural en hombres; Barthel evalúa Actividades Básicas (ABVD: comer, vestirse, baño, esfínteres, desplazamiento) con puntaje de 0 a 100",
+            "Ambas evalúan exclusivamente el coeficiente intelectual verbal",
+            "Un puntaje de 100 en Barthel significa dependencia severa total"
+          ],
+          correct: 1,
+          feedback: "Lawton y Brody mide AIVD (0 a 8 puntos, con posible sesgo cultural en hombres que nunca cocinaron o lavaron ropa). Barthel mide ABVD (100 pts = independencia total; <20 = dependencia total)."
+        },
+        {
+          q: "En el tratamiento farmacológico con 'mejoradores cognitivos' para la Enfermedad de Alzheimer, ¿qué caracteriza al Donepezilo/Rivastigmina frente a la Memantina?",
+          options: [
+            "El donepezilo es un antagonista NMDA sin efectos adversos digestivos",
+            "Donepezilo y rivastigmina son inhibidores reversibles de la acetilcolinesterasa (pueden causar sialorrea, molestias GI y bradicardia extrema); la memantina es un antagonista NMDA mejor tolerado pero de menor potencia cognitiva",
+            "Ambos curan la demencia si se administran después de los 10 años de evolución",
+            "La rivastigmina es un antipsicótico atípico usado para el insomnio"
+          ],
+          correct: 1,
+          feedback: "Los inhibidores de la acetilcolinesterasa (donepezilo, rivastigmina) aumentan la ACh disponible pero tienen frecuentes efectos adversos colinérgicos (sialorrea, dolor abdominal, bradicardia). La memantina (antagonista NMDA) se tolera mejor."
+        },
+        {
+          q: "Si un paciente adulto mayor con demencia presenta un episodio depresivo comórbido, ¿qué antidepresivos se prefieren por seguridad y cuáles se recomienda evitar?",
+          options: [
+            "Preferir amitriptilina e imipramina; evitar sertralina",
+            "Preferir ISRS seguros como Sertralina, Citalopram o Escitalopram; evitar antidepresivos tricíclicos, Paroxetina (más efectos adversos en mayores) y Fluoxetina (vida media muy larga), ya que aumentan el riesgo de caídas",
+            "Indicar exclusivamente benzodiacepinas en monoterapia",
+            "Preferir fluoxetina en dosis de 80 mg junto con diazepam"
+          ],
+          correct: 1,
+          feedback: "En adultos mayores se prefieren sertralina, citalopram o escitalopram, evitando los tricíclicos, la paroxetina y la fluoxetina (por su vida media prolongada y mayor riesgo de efectos adversos y caídas)."
+        }
+      ],
+      5: [ // Urgencias Psiquiátricas (Clase 25 y Clase Invertida)
+        {
+          q: "Durante una intervención en crisis en urgencias, tras permitir el relato y validar emocionalmente al paciente (con un tiempo limitado de catarsis), ¿en qué dos puntos concretos debe focalizarse el clínico?",
+          options: [
+            "Intentar convencer al paciente durante 3 horas de que su problema no es importante y darle el alta",
+            "1) Identificar qué es lo que más le está afectando/doliendo ahora e intervenir sobre eso, y 2) Llegar a un acuerdo en un par de puntos muy concretos (ej. fecha de control, medida específica)",
+            "Realizar psicoanálisis regresivo de la infancia e iniciar terapia electroconvulsiva inmediata",
+            "Confrontar al paciente diciéndole que sus emociones no tienen justificación lógica"
+          ],
+          correct: 1,
+          feedback: "Validar no es justificar. Tras una catarsis acotada, la intervención en crisis se estructura en: 1) focalizar en lo que más le duele/afecta en este momento y 2) acordar puntos concretos a corto plazo."
+        },
+        {
+          q: "Un paciente llega a urgencias completamente inhibido en lo psicomotor, sin comunicarse ni responder a estímulos, pero mantiene los ojos abiertos, claridad de conciencia y moviliza la mirada vigilando limitadamente el entorno. ¿A qué síndrome corresponde y cuáles son sus 4 posibles causas?",
+          options: [
+            "Coma estructural profundo; solo tiene causas neuroquirúrgicas",
+            "Estupor psiquiátrico; sus causas pueden ser: cuadro catatónico, depresivo (melancolía grave), exógeno (médico/neurológico/intoxicación) o psicógeno (conversivo)",
+            "Acatisia aguda por antipsicóticos",
+            "Simulación consciente; siempre debe darse de alta sin exámenes"
+          ],
+          correct: 1,
+          feedback: "En psiquiatría el estupor cursa con inhibición psicomotora marcada, mutismo y mirada que vigila limitadamente el entorno. Puede ser catatónico, depresivo, exógeno (siempre descartar causa orgánica) o psicógeno."
+        },
+        {
+          q: "Frente a un paciente con indicadores de peligrosidad y señales amenazantes en el box de atención, ¿cuál de las siguientes medidas de seguridad es CORRECTA?",
+          options: [
+            "Mostrarse más agresivo ('choro') y gritar más fuerte para imponer autoridad",
+            "Evitar la confrontación (evitar escalada simétrica), ubicarse entre el paciente y la puerta (nunca dejar que bloquee la salida), retirar cortopunzantes, mantener ~1 brazo/1 metro de distancia y pedir pacíficamente que entregue armas si las porta",
+            "Cerrar la puerta con llave por dentro y darle la espalda para escribir en el computador",
+            "Intentar reducirlo físicamente una sola persona aplicando una llave en el cuello"
+          ],
+          correct: 1,
+          feedback: "Nunca se debe confrontar ni permitir que el paciente quede entre el médico y la puerta de salida. Si hay amenaza con arma de fuego se debe evacuar, y para contención física se requiere un equipo coordinado de 5 personas."
+        },
+        {
+          q: "Al evaluar una Agitación Psicomotriz, ¿qué hallazgos clínicos orientan fuertemente a una causa ORGÁNICA (somática) por sobre una psiquiátrica primaria?",
+          options: [
+            "Conciencia clara, antecedentes de esquizofrenia, alucinaciones auditivas y signos vitales normales",
+            "Conciencia alterada y fluctuante, inicio agudo sin antecedentes psiquiátricos, predominio de alucinaciones visuales, desorientación y signos como fiebre, taquicardia o focalidad neurológica",
+            "Discurso verborreico con fuga de ideas y orientación conservada",
+            "Presencia de ganancia secundaria consciente"
+          ],
+          correct: 1,
+          feedback: "El error más grave es asumir origen psiquiátrico sin descartar causas orgánicas letales (hipoglicemia, hipoxia, infección, ACV, abstinencia). Conciencia fluctuante y alucinaciones visuales apuntan a organicidad."
+        },
+        {
+          q: "¿Cómo se diferencia la Agitación Psicomotriz de la Acatisia y del Delirium?",
+          options: [
+            "La acatisia cursa con pérdida total de conciencia y fiebre alta",
+            "En la acatisia (frecuente por antipsicóticos) hay una necesidad subjetiva e imperiosa de moverse para aliviar una inquietud física con juicio de realidad conservado; en el delirium el eje es la inatención y conciencia fluctuante",
+            "En el delirium la atención está intacta y el curso es estable por años",
+            "Son exactamente la misma entidad clínica"
+          ],
+          correct: 1,
+          feedback: "Es vital no confundir acatisia con empeoramiento de la agitación: en la acatisia el paciente tiene juicio conservado y se mueve porque siente una inquietud física insoportable (secundaria a neurolépticos)."
+        },
+        {
+          q: "En el protocolo de manejo de la Agitación Psicomotriz en urgencias, tras fallar la contención verbal, ¿cómo se realiza la contención física y cuál es el esquema farmacológico parenteral de 1ª línea?",
+          options: [
+            "Contención entre 2 personas; administrar Clozapina EV en bolo rápido",
+            "Contención mecánica por 5 personas (1 por cada extremidad + 1 en la cabeza); esquema IM de 1ª línea: Haloperidol (2,5-5 mg IM) + Lorazepam (2-4 mg IM), esperando 20-30 min para evaluar respuesta",
+            "Usar Olanzapina 10 mg IM mezclada en la misma jeringa con Lorazepam 4 mg EV",
+            "Administrar benzodiacepinas en dosis altas a pacientes con miastenia gravis o insuficiencia respiratoria severa"
+          ],
+          correct: 1,
+          feedback: "La contención física requiere 5 personas coordinadas. El esquema clásico de rescate es Haloperidol 2,5-5 mg IM + Lorazepam 2-4 mg IM. Si se usa BZD parenteral, tener Flumazenil disponible."
+        },
+        {
+          q: "¿Qué precaución clínica fundamental existe al utilizar Olanzapina intramuscular (10 mg IM) en un paciente agitado en urgencias?",
+          options: [
+            "Debe coadministrarse siempre junto con midazolam endovenoso al mismo minuto",
+            "Debe evitarse su coadministración simultánea con benzodiacepinas parenterales (dejar un intervalo mayor a 2 horas) por riesgo de depresión respiratoria, hipotensión severa o colapso cardiovascular",
+            "Produce hipertensión maligna en el 100% de los pacientes jóvenes",
+            "No tiene ningún efecto sedante porque no actúa en receptores H1"
+          ],
+          correct: 1,
+          feedback: "La Olanzapina IM NO debe administrarse simultáneamente ni en un intervalo menor a 2 horas con benzodiacepinas parenterales debido al riesgo documentado de depresión respiratoria y colapso cardiorrespiratorio."
+        },
+        {
+          q: "Respecto a la evaluación del Riesgo Suicida (Clase Invertida), ¿qué diferencia la ideación egosintónica de la egodistónica, y cuánto aumenta el riesgo contar con un plan estructurado?",
+          options: [
+            "En la ideación egosintónica el paciente siente culpa y rechazo por la idea, siendo de bajo riesgo",
+            "En la ideación egosintónica el paciente siente alivio al pensar en la muerte (alto riesgo), mientras que en la egodistónica siente angustia o ambivalencia; contar con un plan eleva 11 veces el riesgo de autólisis en un año",
+            "Si el método usado en un intento fue de baja letalidad, se descarta cualquier intención suicida grave",
+            "Sentirse decepcionado o arrepentido de haber sobrevivido a un intento indica buen pronóstico y alta inmediata"
+          ],
+          correct: 1,
+          feedback: "La ideación egosintónica (sentir alivio con la idea de morir), la decepción por haber sobrevivido al intento y contar con un plan concreto (que multiplica por 11 el riesgo) son marcadores de altísimo riesgo suicida."
+        }
+      ],
+      6: [ // Trastornos por síntomas somáticos (Clase 26)
+        {
+          q: "Un paciente consulta reiteradamente diciendo 'me duele el pecho, tengo el cuello apretado y la guata tomada', siendo incapaz de identificar o verbalizar que se siente angustiado, tenso o con miedo. ¿Cómo se denomina este fenómeno?",
+          options: [
+            "Anosognosia",
+            "Alexitimia",
+            "Bella indiferencia",
+            "Disforia de la integridad corporal"
+          ],
+          correct: 1,
+          feedback: "La alexitimia es la incapacidad o severa dificultad para leer, reconocer y expresar verbalmente las propias emociones, utilizando el cuerpo como vehículo primario de expresión del malestar."
+        },
+        {
+          q: "Según el DSM-5, ¿qué cambio fundamental ocurrió en el diagnóstico del Trastorno por Síntomas Somáticos (TSS) respecto a los antiguos trastornos somatomorfos del DSM-IV?",
+          options: [
+            "Ahora se exige demostrar mediante biopsia que el paciente está fingiendo el síntoma",
+            "Ya no es un diagnóstico meramente de exclusión: puede existir una enfermedad médica concomitante, pues el diagnóstico se basa en los pensamientos, ansiedad y comportamientos excesivos/desproporcionados (>6 meses) en torno a los síntomas",
+            "Se eliminó el dolor como especificador y ahora requiere alucinaciones auditivas",
+            "Solo se diagnostica si el paciente tiene menos de 15 años"
+          ],
+          correct: 1,
+          feedback: "En el DSM-5 deja de exigirse que el síntoma sea 'médicamente inexplicable'; lo central es la respuesta cognitiva, afectiva y conductual excesiva y persistente (>6 meses) frente a uno o más síntomas somáticos."
+        },
+        {
+          q: "¿Cuáles son los pilares del manejo general de un paciente con Trastorno por Síntomas Somáticos en Atención Primaria?",
+          options: [
+            "Solicitar TAC y resonancia en cada consulta y recetar benzodiacepinas a libre demanda",
+            "Cuidar una relación médico-paciente empática (médico de cabecera único), legitimar los síntomas, programar citas regulares (no contingentes a crisis), evitar exámenes innecesarios (iatrogenia) y enfocar la meta en recuperar la funcionalidad",
+            "Confrontar al paciente diciéndole que no tiene nada físico y que todo está en su mente",
+            "Derivarlo exclusivamente a cirugía general para laparoscopía exploradora"
+          ],
+          correct: 1,
+          feedback: "El elemento terapéutico más potente es una relación médico-paciente empática con controles programados periódicos (para que el paciente no necesite tener una crisis de dolor para ser visto), legitimando su malestar y evitando la iatrogenia."
+        },
+        {
+          q: "En el Trastorno de Síntomas Neurológicos Funcionales (Trastorno Conversivo), ¿cuál de los siguientes elementos constituye una clave clínica clásica y qué factores se asocian a un MEJOR pronóstico?",
+          options: [
+            "Curso crónico de 10 años, comorbilidad de personalidad severa y ausencia de estresores",
+            "Síntomas motores/sensitivos (parálisis, afonía, pseudoconvulsiones) con distribución no anatómica (en guante o calcetín) o 'bella indiferencia'; tienen buen pronóstico cuando el inicio es agudo, con factor precipitante identificable y buen funcionamiento previo",
+            "Presencia de reflejo plantar extensor bilateral por lesión piramidal hemorrágica",
+            "Falta total de respuesta en pacientes ambulatorios"
+          ],
+          correct: 1,
+          feedback: "Los síntomas conversivos suelen reflejar la concepción del paciente sobre la anatomía (ej. anestesia en guante/calcetín) y pueden presentar 'bella indiferencia'. El inicio agudo tras un estresor claro en alguien con buen funcionamiento previo tiene pronóstico favorable."
+        },
+        {
+          q: "¿Cómo se diferencia el Trastorno de Ansiedad por Enfermedad (antigua hipocondría) del Trastorno por Síntomas Somáticos en el DSM-5, y cuáles son sus dos tipos de presentación?",
+          options: [
+            "En el trastorno de ansiedad por enfermedad el paciente siempre presenta parálisis motora",
+            "En el trastorno de ansiedad por enfermedad existe una preocupación intensa (≥6 meses) por padecer una enfermedad grave (ej. cáncer, VIH, EM), pero los síntomas somáticos están ausentes o son mínimos; se presenta con 'búsqueda de asistencia' o con 'evitación de asistencia'",
+            "Afecta 10 veces más a hombres que a mujeres y cede inmediatamente al decirle 'no tienes nada'",
+            "Es sinónimo de simulación médico-legal"
+          ],
+          correct: 1,
+          feedback: "En el Trastorno de Ansiedad por Enfermedad los síntomas físicos son leves o inexistentes; lo nuclear es la convicción o miedo persistente a tener una enfermedad grave, pudiendo ser buscador frecuente de atención médica o evitador por miedo al diagnóstico."
+        },
+        {
+          q: "Según el modelo del 'Bucle de Procesamiento Cognitivo' en los síntomas somáticos (Clase 26), ¿cómo interactúan las señales Bottom-Up y Top-Down?",
+          options: [
+            "El cerebro bloquea todas las señales corporales generando anestesia total",
+            "Señales sensoriales imprecisas (Bottom-Up) se encuentran con expectativas hiperprecisas de enfermedad (Top-Down); el cerebro prioriza la expectativa sobre la señal real, generando distrés físico auténtico y cronificando el síntoma",
+            "El paciente decide voluntariamente inventar un dolor para cobrar un seguro",
+            "Las vías periféricas destruyen la corteza motora primaria"
+          ],
+          correct: 1,
+          feedback: "El cerebro prioriza las expectativas hiperprecisas y catastrofizantes (Top-Down) sobre las señales sensoriales imprecisas (Bottom-Up), amplificando la percepción de distrés físico en un bucle de retroalimentación."
+        },
+        {
+          q: "En relación con el mecanismo de producción del síntoma y la motivación subyacente, ¿cuál es la diferencia exacta entre Trastorno Somatomorfo, Trastorno Facticio y Simulación?",
+          options: [
+            "En los tres tanto el mecanismo como la motivación son completamente conscientes",
+            "Somatomorfo: producción inconsciente y motivación inconsciente; Facticio: producción consciente (se induce síntomas/manipula pruebas) pero motivación inconsciente (rol de enfermo sin recompensa externa obvia); Simulación: producción consciente y motivación consciente (beneficio externo: legal, económico, licencia)",
+            "En el trastorno facticio la producción es inconsciente pero busca cobrar una indemnización judicial",
+            "La simulación es un trastorno psicótico endógeno"
+          ],
+          correct: 1,
+          feedback: "Tabla clave de la Clase 26: T. Somatomorfo (Mecanismo Inconsciente / Motivación Inconsciente), T. Facticio (Mecanismo Consciente / Motivación Inconsciente por ocupar el rol de enfermo), Simulación (Mecanismo Consciente / Motivación Consciente por incentivo externo)."
+        },
+        {
+          q: "Una paciente tras un accidente laboral sufre la incapacidad de recordar información autobiográfica importante (no recuerda su historia de vida ni que está casada, aunque reconoce que su marido la trata bien), superando el olvido ordinario y sin daño orgánico que lo explique. Si además hubiera viajado desorientada a otra ciudad, ¿cuál es el diagnóstico y su especificador?",
+          options: [
+            "Trastorno de despersonalización/desrealización",
+            "Amnesia disociativa (con especificador de fuga disociativa si existe viaje o vagabundeo asociado a la amnesia)",
+            "Trastorno dismórfico corporal",
+            "Enfermedad de Alzheimer en etapa terminal"
+          ],
+          correct: 1,
+          feedback: "La incapacidad de recordar información autobiográfica importante (generalmente traumática o estresante) corresponde a la Amnesia Disociativa. En el DSM-5, la fuga disociativa pasó a ser un especificador de este cuadro."
+        }
+      ],
+      7: [ // Red de Salud (Clase 27)
+        {
+          q: "Según la Clase 27 sobre el Modelo de Gestión de Salud Mental en Chile, ¿cuál es la puerta de entrada al sistema público, qué modelo la sustenta y cuáles son los 2 programas con mayor población bajo control en APS en el Maule?",
+          options: [
+            "La UHCIP hospitalaria; el programa más grande es cirugía plástica",
+            "La Atención Primaria (CESFAM, CECOSF, Postas Rurales, Estaciones Médicas Rurales) bajo el Modelo de Atención Integral de Salud Familiar y Comunitaria; el 1° programa con más control es Cardiovascular (~250.000 personas) y el 2° es Salud Mental (~85.000 en la red del Maule)",
+            "Los hospitales psiquiátricos asilares cerrados",
+            "Las consultas privadas de subespecialidad"
+          ],
+          correct: 1,
+          feedback: "La APS es la puerta de entrada mediante un enfoque familiar y comunitario (además de la estrategia ECICEP para multimorbilidad). En la Región del Maule (47 CESFAM, 162 postas y 13 hospitales), Salud Mental es el segundo programa más grande tras Cardiovascular."
+        },
+        {
+          q: "¿En qué consiste la 'Consultoría Psiquiátrica' dentro de la articulación de la red temática de salud mental y cuál es su utilidad clínica?",
+          options: [
+            "Es cuando el paciente pide una segunda opinión por internet a una inteligencia artificial",
+            "Es la instancia donde el equipo de especialidad (psiquiatra/COSAM) acude al centro de Atención Primaria (APS) para analizar casos complejos junto al equipo local, resolver dudas diagnósticas (ej. diferenciar TLP de Trastorno Bipolar) o definir derivación a nivel secundario",
+            "Es una auditoría contable para cerrar camas hospitalarias",
+            "Es la atención exclusiva de pacientes quirúrgicos en pabellón"
+          ],
+          correct: 1,
+          feedback: "La consultoría articula el nivel primario (APS) con el de especialidad (COSAM/Hospital), permitiendo evaluar en conjunto casos de duda diagnóstica o terapéutica y mejorando la capacidad resolutiva."
+        },
+        {
+          q: "¿Cuántos Centros de Salud Mental Comunitaria (COSAM / centros comunitarios) existen en la Región del Maule según la Clase 27 y en qué comunas se ubican?",
+          options: [
+            "Solo 1 ubicado en Santiago",
+            "6 centros comunitarios: ubicados en Curicó, Talca, Constitución, Linares, Cauquenes y Parral",
+            "47 centros, uno dentro de cada posta rural",
+            "Ninguno, ya que toda la atención ambulatoria se hace en la UCI"
+          ],
+          correct: 1,
+          feedback: "En la Región del Maule existen 6 centros de salud mental comunitarios distribuidos en Curicó, Talca, Constitución, Linares, Cauquenes y Parral para el manejo ambulatorio de especialidad."
+        },
+        {
+          q: "En un paciente derivado al nivel de especialidad por antecedentes de Trauma Complejo, ¿qué modalidades psicoterapéuticas específicas se mencionan en clases?",
+          options: [
+            "Hipnosis regresiva sin fármacos",
+            "EMDR (Desensibilización y Reprocesamiento por Movimientos Oculares) y TCC (Terapia Cognitivo-Conductual)",
+            "Exclusivamente contención mecánica semanal",
+            "Terapia aversiva con disulfiram"
+          ],
+          correct: 1,
+          feedback: "En los equipos de especialidad se dispone de fármacos y psicoterapias de mayor complejidad que en APS, destacando EMDR y TCC para el abordaje del trauma complejo."
+        },
+        {
+          q: "Dentro de la atención cerrada hospitalaria, ¿cuál es la diferencia entre la UHCIP y la Unidad de Psiquiatría de Enlace?",
+          options: [
+            "La UHCIP atiende por teléfono y Enlace atiende en postas rurales",
+            "La UHCIP (Unidad de Hospitalización de Cuidados Intensivos en Psiquiatría) hospitaliza pacientes con descompensación psiquiátrica aguda grave para compensarlos; la Unidad de Enlace evalúa pacientes hospitalizados en otros servicios médico-quirúrgicos (medicina, cirugía, pediatría) que presentan patología mental concomitante",
+            "La UHCIP es una residencia definitiva de por vida para adultos mayores",
+            "Enlace se dedica exclusivamente a peritajes judiciales penales"
+          ],
+          correct: 1,
+          feedback: "La UHCIP funciona como una unidad crítica cerrada de estadía breve para compensar cuadros agudos, mientras que Psiquiatría de Enlace interconsulta pacientes ingresados en camas de medicina, cirugía o pediatría."
+        },
+        {
+          q: "¿A qué perfiles de pacientes está dirigido el 'Hospital de Día' en Salud Mental y qué ejemplos clínicos característicos se mencionan en la Clase 27?",
+          options: [
+            "Pacientes en coma profundo que requieren ventilación mecánica invasiva las 24 horas",
+            "Pacientes que inician una descompensación o que acaban de salir de hospitalización cerrada y requieren transición/seguimiento diario (ej. pacientes que inician Clozapina y requieren control hematológico semanal, pacientes con TLP para adquirir habilidades ante crisis, o rehabilitación de rutinas/autonomía en esquizofrenia o TEA)",
+            "Exclusivamente pacientes con resfrío común en SAPU",
+            "Personas que cumplen condenas perpetuas en cárceles de alta seguridad"
+          ],
+          correct: 1,
+          feedback: "El Hospital de Día funciona en horario diurno (8:00 a 18:00 hrs, estadía promedio de 1-2 meses) con terapia ocupacional, grupal, individual y supervisión farmacológica (como inicio de clozapina o manejo de crisis en TLP)."
+        },
+        {
+          q: "¿Qué son las Residencias Estratégicas y cuáles son los dos ámbitos principales de acción de la Psiquiatría Forense en la red de salud?",
+          options: [
+            "Son hoteles privados de vacaciones; la psiquiatría forense solo ve divorcios",
+            "Las Residencias Estratégicas brindan soporte social (alojamiento, alimentación, monitoreo farmacológico) a personas con discapacidad psíquica sin red familiar; la Psiquiatría Forense realiza: 1) Evaluación pericial de imputabilidad (enajenación mental al cometer un delito) y 2) Hospitalización/vigilancia en unidades forenses de quienes delinquieron descompensados",
+            "Las residencias estratégicas son sinónimo de SAPU de urgencia",
+            "La psiquiatría forense reemplaza a la atención primaria en todos los CESFAM"
+          ],
+          correct: 1,
+          feedback: "Tras la desinstitucionalización, las Residencias Estratégicas apoyan a pacientes sin soporte familiar. Por su parte, la Psiquiatría Forense evalúa pericialmente la responsabilidad penal y maneja unidades forenses especializadas."
+        },
+        {
+          q: "¿Cuál es el espíritu de la Ley N° 21.331 mencionada al final de la Clase 27 y qué advertencia realiza el docente sobre el uso de chatbots de IA (como ChatGPT) por parte de pacientes en salud mental?",
+          options: [
+            "La ley promueve construir más asilos cerrados perpetuos y reemplazar a los médicos por IA",
+            "La Ley 21.331 busca erradicar el modelo asilar tradicional sustituyéndolo por atención comunitaria, ambulatoria y participativa; y se advierte que los modelos de lenguaje suelen ser condescendientes (validando ideas riesgosas como suspender antiepilépticos o ideas suicidas), por lo que requieren extrema cautela",
+            "La ley prohíbe el funcionamiento de los COSAM en regiones",
+            "Los chatbots nunca cometen errores clínicos ni validan ideas autolíticas"
+          ],
+          correct: 1,
+          feedback: "El modelo chileno se rige por un enfoque comunitario desinstitucionalizador (Ley 21.331). Además, el docente advierte sobre el peligro de la condescendencia de las IA comerciales frente a usuarios vulnerables o con ideación suicida."
+        }
+      ]
+    };
+
+    // Estado del juego
+    let score = 0;
+    const targetScore = 5000;
+    let lives = 3;
+    let isSpinning = false;
+    let currentRotation = 0;
+    let usedQuestions = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+
+    const canvas = document.getElementById("wheelCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function drawWheel() {
+      const numSlices = categories.length;
+      const arc = (2 * Math.PI) / numSlices;
+      const radius = canvas.width / 2;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < numSlices; i++) {
+        const angle = i * arc;
+        ctx.beginPath();
+        ctx.fillStyle = categories[i].color;
+        ctx.moveTo(radius, radius);
+        ctx.arc(radius, radius, radius - 8, angle, angle + arc);
+        ctx.lineTo(radius, radius);
+        ctx.fill();
+
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#0f172a";
+        ctx.stroke();
+
+        // Texto de cada categoría
+        ctx.save();
+        ctx.translate(radius, radius);
+        ctx.rotate(angle + arc / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 17px 'Segoe UI', sans-serif";
+        ctx.shadowColor = "rgba(0,0,0,0.6)";
+        ctx.shadowBlur = 4;
+        ctx.fillText(categories[i].short, radius - 28, 6);
+        ctx.restore();
+      }
+
+      // Borde exterior
+      ctx.beginPath();
+      ctx.arc(radius, radius, radius - 4, 0, 2 * Math.PI);
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = "#f8fafc";
+      ctx.stroke();
+    }
+
+    function renderLegend() {
+      const legend = document.getElementById("categoryLegend");
+      legend.innerHTML = "";
+      categories.forEach(cat => {
+        const div = document.createElement("div");
+        div.className = "legend-item";
+        div.onclick = () => {
+          if (!isSpinning) openCategoryQuestion(cat.id);
+        };
+        div.innerHTML = `
+          <span class="legend-color" style="background:${cat.color}"></span>
+          <span>${cat.name}</span>
+        `;
+        legend.appendChild(div);
+      });
+    }
+
+    function updateHUD() {
+      document.getElementById("scoreValue").textContent = score;
+      const pct = Math.min(100, (score / targetScore) * 100);
+      document.getElementById("progressBar").style.width = pct + "%";
+      document.getElementById("livesDisplay").textContent = "❤️".repeat(lives) + "🖤".repeat(3 - lives);
+    }
+
+    function spinWheel() {
+      if (isSpinning || lives <= 0 || score >= targetScore) return;
+      isSpinning = true;
+      document.getElementById("spinBtn").disabled = true;
+
+      const extraSpins = 5 + Math.floor(Math.random() * 4);
+      const randomDegree = Math.floor(Math.random() * 360);
+      const totalDelta = extraSpins * 360 + randomDegree;
+      currentRotation += totalDelta;
+
+      canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+      setTimeout(() => {
+        isSpinning = false;
+        document.getElementById("spinBtn").disabled = false;
+
+        // El puntero está arriba (270 grados en coordenadas estándar del canvas)
+        const normalizedDeg = currentRotation % 360;
+        const pointerAngle = (270 - normalizedDeg + 360) % 360;
+        const sliceIndex = Math.floor(pointerAngle / (360 / categories.length));
+
+        openCategoryQuestion(sliceIndex);
+      }, 4100);
+    }
+
+    function openCategoryQuestion(catId) {
+      const cat = categories[catId];
+      const pool = questionBank[catId];
+
+      // Si ya se respondieron las 8 preguntas de esta categoría, reiniciamos su mazo para seguir jugando hasta 5000 pts
+      if (usedQuestions[catId].length >= pool.length) {
+        usedQuestions[catId] = [];
+      }
+
+      const availableIndices = pool
+        .map((_, idx) => idx)
+        .filter(idx => !usedQuestions[catId].includes(idx));
+
+      const chosenIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+      usedQuestions[catId].push(chosenIndex);
+
+      const qObj = pool[chosenIndex];
+
+      const badge = document.getElementById("modalCategoryBadge");
+      badge.textContent = cat.name;
+      badge.style.backgroundColor = cat.color;
+
+      document.getElementById("modalQuestionText").textContent = qObj.q;
+
+      const optionsContainer = document.getElementById("modalOptionsList");
+      optionsContainer.innerHTML = "";
+
+      // Mezclar el orden de las alternativas para que el estudio sea activo
+      const indexedOptions = qObj.options.map((text, idx) => ({
+        text,
+        isCorrect: idx === qObj.correct
+      }));
+      for (let i = indexedOptions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indexedOptions[i], indexedOptions[j]] = [indexedOptions[j], indexedOptions[i]];
+      }
+
+      const letters = ["A", "B", "C", "D"];
+      indexedOptions.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.innerHTML = `<span class="option-letter">${letters[idx]}.</span> <span>${opt.text}</span>`;
+        btn.onclick = () => selectAnswer(btn, opt.isCorrect, indexedOptions, qObj.feedback);
+        optionsContainer.appendChild(btn);
+      });
+
+      const fbBox = document.getElementById("modalFeedbackBox");
+      fbBox.classList.remove("active");
+      document.getElementById("modalNextBtn").style.display = "none";
+      document.getElementById("questionModal").classList.add("active");
+    }
+
+    function selectAnswer(selectedBtn, isCorrect, indexedOptions, feedbackText) {
+      const allBtns = document.querySelectorAll("#modalOptionsList .option-btn");
+      allBtns.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (indexedOptions[idx].isCorrect) {
+          btn.classList.add("correct");
+        }
+      });
+
+      const fbBox = document.getElementById("modalFeedbackBox");
+      const fbTitle = document.getElementById("modalFeedbackTitle");
+      const fbText = document.getElementById("modalFeedbackText");
+
+      if (isCorrect) {
+        selectedBtn.classList.add("correct");
+        score += 100;
+        fbBox.style.borderLeftColor = "#22c55e";
+        fbTitle.style.color = "#4ade80";
+        fbTitle.textContent = "✅ ¡Respuesta Correcta! (+100 puntos)";
+      } else {
+        selectedBtn.classList.add("wrong");
+        lives -= 1;
+        fbBox.style.borderLeftColor = "#ef4444";
+        fbTitle.style.color = "#f87171";
+        fbTitle.textContent = "❌ Respuesta Incorrecta (-1 vida)";
+      }
+
+      fbText.textContent = feedbackText;
+      fbBox.classList.add("active");
+      document.getElementById("modalNextBtn").style.display = "block";
+      updateHUD();
+    }
+
+    function closeQuestionModal() {
+      document.getElementById("questionModal").classList.remove("active");
+
+      if (score >= targetScore) {
+        showEndScreen(true);
+      } else if (lives <= 0) {
+        showEndScreen(false);
+      }
+    }
+
+    function showEndScreen(isVictory) {
+      const endModal = document.getElementById("endModal");
+      const emoji = document.getElementById("endEmoji");
+      const title = document.getElementById("endTitle");
+      const msg = document.getElementById("endMessage");
+
+      if (isVictory) {
+        emoji.textContent = "🏆";
+        title.textContent = "¡Meta de 5000 Puntos Alcanzada!";
+        msg.textContent = `¡Excelente dominio de Psiquiatría! Lograste alcanzar los ${score} puntos conservando ${lives} vida(s).`;
+      } else {
+        emoji.textContent = "💔";
+        title.textContent = "Te has quedado sin vidas";
+        msg.textContent = `Alcanzaste un puntaje de ${score} / ${targetScore} puntos. ¡Repasa las retroalimentaciones y vuelve a intentarlo!`;
+      }
+
+      endModal.classList.add("active");
+    }
+
+    function resetGame() {
+      score = 0;
+      lives = 3;
+      usedQuestions = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+      document.getElementById("questionModal").classList.remove("active");
+      document.getElementById("endModal").classList.remove("active");
+      updateHUD();
+    }
+
+    // Inicialización
+    drawWheel();
+    renderLegend();
+    updateHUD();
+  </script>
+</body>
+</html>
